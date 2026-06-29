@@ -22,6 +22,35 @@ changent entre les langues : le moteur JS et la structure du bracket sont identi
 
 Hébergé sur GitHub Pages : `https://jcrochet-netizen.github.io/bracket-wc2026-v3/<fichier>`.
 
+## Résultats officiels en direct (SportMonks)
+
+Une couche « live » fait avancer **automatiquement** le vainqueur de chaque match
+joué (16es → finale) et le **verrouille** (l'utilisateur ne peut plus le changer) ;
+il continue de pronostiquer librement les matchs à venir.
+
+```
+SportMonks API ─> fetch-results.js ─> results.json ─> widget (lit results.json, jamais le token)
+  (token serveur)   (GitHub Action cron */15)          applique + VERROUILLE les matchs joués
+```
+
+- **`fetch-results.js`** (serveur) : lit les fixtures de la phase à élimination
+  directe de la saison 26618 (stages *Round of 32 → Final*), désigne le vainqueur de
+  chaque match terminé, et écrit `results.json` :
+  `{ "updated": …, "matches": [ { "a":"GER", "b":"PAR", "w":"GER" }, … ] }` (codes équipes).
+- **Le widget** lit `results.json` (toutes les 5 min, `fetch` côté client), puis via sa
+  propre logique de bracket fait correspondre chaque résultat à la bonne rencontre **par
+  paire d'équipes**, tour après tour : il fixe le vainqueur, le verrouille (cercle + ligne
+  **verts**), et purge tout pronostic aval devenu invalide. Le token n'est **jamais** exposé.
+
+Les matchs verrouillés affichent un bandeau « résultats officiels en direct » et le
+vainqueur en vert ; les matchs non encore joués restent cliquables (pronostic, en bleu).
+
+### Déploiement de la couche live
+1. Secret `SPORTMONKS_API_TOKEN` dans **Settings → Secrets and variables → Actions**.
+2. L'action `.github/workflows/refresh-results.yml` régénère `results.json` toutes les
+   15 min et le commit s'il a changé (cron + bouton « Run workflow »).
+3. En local : `cp .env.example .env` (renseigne le token) puis `node fetch-results.js`.
+
 ## Intégration WordPress (bloc « HTML personnalisé »)
 
 Sur chaque page localisée, colle le bloc ci-dessous (remplace `src` + `title` + le texte

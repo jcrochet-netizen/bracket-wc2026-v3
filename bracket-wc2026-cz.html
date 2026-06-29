@@ -45,6 +45,10 @@
 #wc2026 .wc-hdr h2 span{color:#e2b714}
 #wc2026 .wc-hdr p{font-size:13px;color:#000;margin-top:6px}
 #wc2026 .wc-hdr-sub{text-align:center;margin-top:10px}
+#wc2026 .wc-live{text-align:center;font-size:11px;color:#15803d;background:#f0fdf4;border-top:1px solid #dcfce7;border-bottom:1px solid #dcfce7;padding:6px 12px}
+#wc2026 .wc-live-dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#16a34a;margin-right:6px;vertical-align:middle;animation:wc-pulse 1.6s infinite}
+@keyframes wc-pulse{0%,100%{opacity:1}50%{opacity:.25}}
+#wc2026 .wc-live-lock{color:#6c757d;margin-left:8px}
 #wc2026 .wc-toolbar{display:flex;justify-content:center;gap:12px;padding:10px 16px;background:#f8f9fa;border-bottom:1px solid #e9ecef}
 #wc2026 .wc-btn{padding:6px 16px;border:1px solid #dee2e6;border-radius:20px;background:#fff;color:#495057;font-size:11px;cursor:pointer;font-weight:600;transition:all .2s}
 #wc2026 .wc-btn:hover{background:#e3f2fd;border-color:#90caf9;color:#1565c0}
@@ -156,6 +160,7 @@
 <p>Kanada · Mexiko · USA — 11. června – 19. července 2026</p>
 <p class="wc-hdr-sub" style="font-size:14px;color:#000;font-style:italic;margin-top:10px">Klikněte na týmy a posuňte je od šestnáctifinále až k titulu.</p>
 </div>
+<div id="wc-live-status" class="wc-live" style="display:none"></div>
 
 <div class="wc-divider"></div>
 
@@ -368,6 +373,48 @@ return w===ta?tb:ta;
 }
 
 /* ============ BRACKET LOGIC ============ */
+/* ===== RÉSULTATS OFFICIELS EN DIRECT (SportMonks via results.json) ===== */
+var locked={};         // { matchId:true } — résultat officiel, l'utilisateur ne peut pas le changer
+var LIVE_RESULTS=[];   // [{a,b,w}] lus dans results.json
+var liveUpdated=null;  // horodatage ISO de la dernière mise à jour
+var LIVE_I18N={note:"Oficiální výsledky živě",upd:"Akt.",legend:"🟢 oficiální výsledek (uzamčeno)"};
+var KO_ORDER=[49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70,71,72,73,74,75,76,77,78,79,80];
+function pairKey(x,y){return x<y?x+'|'+y:y+'|'+x;}
+/* Applique les résultats officiels : pour chaque match dont la paire d'équipes
+   correspond à un résultat connu, fait avancer + verrouille le vainqueur. Traité
+   dans l'ordre des tours pour que les tours suivants se résolvent après les
+   précédents. Si un résultat officiel contredit un pronostic, on purge l'aval. */
+function applyResults(){
+locked={};
+var byPair={};
+for(var i=0;i<LIVE_RESULTS.length;i++){var r=LIVE_RESULTS[i];if(r&&r.a&&r.b&&r.w)byPair[pairKey(r.a,r.b)]=r.w;}
+for(var k=0;k<KO_ORDER.length;k++){
+var mid=KO_ORDER[k];
+var ta=getTeam(mid,'a'),tb=getTeam(mid,'b');
+if(!ta||!tb)continue;
+var w=byPair[pairKey(ta,tb)];
+if(w&&(w===ta||w===tb)){
+if(winners[mid]!==w){if(winners[mid])clearDown(mid);winners[mid]=w;}
+locked[mid]=true;
+}
+}
+}
+function renderLiveStatus(){
+var el=document.getElementById('wc-live-status');if(!el)return;
+var n=0;for(var k in locked)n++;
+if(!liveUpdated&&!n){el.style.display='none';return;}
+el.style.display='block';
+var d=liveUpdated?new Date(liveUpdated):null;
+var hh=d?(('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2)):'';
+el.innerHTML='<span class="wc-live-dot"></span>'+LIVE_I18N.note+(hh?' · '+LIVE_I18N.upd+' '+hh:'')+'<span class="wc-live-lock">'+LIVE_I18N.legend+'</span>';
+}
+function loadResults(){
+return fetch('results.json?_='+Date.now(),{cache:'no-store'})
+.then(function(r){return r.ok?r.json():null;})
+.then(function(j){if(j&&j.matches){LIVE_RESULTS=j.matches;liveUpdated=j.updated||null;applyResults();render();}})
+.catch(function(){});
+}
+
 function clearDown(mid){
 var allIds=Object.keys(M_FEED);
 // Also check R32 ids
@@ -377,7 +424,7 @@ var id=allIds[j];
 var m=M_FEED[id];
 if(!m) continue;
 if((m.fa&&m.fa.m==mid)||(m.fb&&m.fb.m==mid)){
-if(winners[id]){delete winners[id];clearDown(id);}
+if(winners[id]&&!locked[id]){delete winners[id];clearDown(id);}
 }
 }
 }
@@ -387,6 +434,7 @@ winners={};
 }
 
 function selectWinner(mid,team){
+if(locked[mid])return;   // résultat officiel — non modifiable
 if(winners[mid]===team){delete winners[mid];clearDown(mid);}
 else{if(winners[mid])clearDown(mid);winners[mid]=team;}
 render();
@@ -449,24 +497,26 @@ var da=(d==='')?'':' stroke-dasharray="'+(d||LD)+'"';
 return '<line x1="'+x1.toFixed(1)+'" y1="'+y1.toFixed(1)+'" x2="'+x2.toFixed(1)+'" y2="'+y2.toFixed(1)+'" stroke="'+(c||LC)+'" stroke-width="1.5"'+da+'/>';
 }
 function circ(cx,cy,r,mid,w){
-var t=w?T[w]:null,hf=t&&t.f,cid='cc'+mid;
+var t=w?T[w]:null,hf=t&&t.f,cid='cc'+mid,lk=locked[mid];
+var strokeCol=w?(lk?'#16a34a':'#e2b714'):'#c0cdd8';
 var str='<g class="wc-circ" onclick="WC.clickCircle('+mid+')" style="cursor:'+(w?'pointer':'default')+'">';
-str+='<circle cx="'+cx+'" cy="'+cy.toFixed(1)+'" r="'+r+'" fill="'+(w?'#1a3a5c':'#f0f4f8')+'" stroke="'+(w?'#e2b714':'#c0cdd8')+'" stroke-width="'+(w?2:1.5)+'"/>';
+str+='<circle cx="'+cx+'" cy="'+cy.toFixed(1)+'" r="'+r+'" fill="'+(w?'#1a3a5c':'#f0f4f8')+'" stroke="'+strokeCol+'" stroke-width="'+(w?(lk?2.5:2):1.5)+'"/>';
 if(hf){str+='<defs><clipPath id="'+cid+'"><circle cx="'+cx+'" cy="'+cy.toFixed(1)+'" r="'+(r-1)+'"/></clipPath></defs>';
 str+='<image href="https://flagcdn.com/w40/'+t.f+'.png" x="'+(cx-r)+'" y="'+(cy-9.5).toFixed(1)+'" width="'+(2*r)+'" height="19" clip-path="url(#'+cid+')" preserveAspectRatio="xMidYMid slice"/>';}
 str+='</g>';return str;
 }
 function tRow(mid,slot,yi,side){
 var code=getTeam(mid,slot),t=code?T[code]:null;
-var wm=winners[mid];
+var wm=winners[mid],lk=locked[mid];
 var isW=code&&code===wm,isL=wm&&code&&code!==wm;
-var bg=isW?'#dbeafe':isL?'#f9fafb':'transparent';
-var fg=isW?'#1e40af':isL?'#9ca3af':'#222';
+var bg=isW?(lk?'#dcfce7':'#dbeafe'):isL?'#f9fafb':'transparent';
+var fg=isW?(lk?'#15803d':'#1e40af'):isL?'#9ca3af':'#222';
 var op=isL?'.4':'1',fw=isW?'bold':'normal';
-var oc=code?"WC.selectWinner("+mid+",'"+code+"')":'';
+var clickable=code&&!lk;
+var oc=clickable?"WC.selectWinner("+mid+",'"+code+"')":'';
 var sh=t?((/^PL/.test(code))?t.s:code):'?';
 var y=ty(yi);
-var str='<g class="wc-tr" onclick="'+oc+'" style="cursor:'+(code?'pointer':'default')+';opacity:'+op+'">';
+var str='<g class="wc-tr" onclick="'+oc+'" style="cursor:'+(clickable?'pointer':'default')+';opacity:'+op+'">';
 if(side==='L'){
 str+='<rect class="wc-bg" x="1" y="'+(y-SL/2+1).toFixed(1)+'" width="'+(TW-3)+'" height="'+(SL-2)+'" rx="2" fill="'+bg+'"/>';
 if(t&&t.f)str+='<image href="https://flagcdn.com/w40/'+t.f+'.png" x="5" y="'+(y-8).toFixed(1)+'" width="22" height="15" preserveAspectRatio="xMidYMid"/>';
@@ -558,6 +608,7 @@ function render(){
 renderBracket();
 renderChampion();
 updateProgress();
+renderLiveStatus();
 }
 
 function renderAll(){
@@ -587,12 +638,15 @@ allocateThirds();
 
 function reset(){
 winners={};
+applyResults();   // les résultats officiels restent verrouillés après un reset
 render();
 }
 
 /* Init */
 seedGroups();
 render();
+loadResults();
+setInterval(loadResults,5*60*1000);   // rafraîchit les résultats officiels toutes les 5 min
 
 /* Generate bracket PNG — returns a data URL */
 async function generateImageDataUrl(){
@@ -681,6 +735,7 @@ winners={};
 var ta=getTeam(mid,'a'),tb=getTeam(mid,'b');
 if(!ta||!tb)return;
 winners[mid]=Math.random()<.5?ta:tb;});
+applyResults();   // les résultats officiels écrasent l'aléatoire et restent verrouillés
 render();
 }
 
