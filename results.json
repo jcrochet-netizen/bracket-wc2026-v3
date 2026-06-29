@@ -1,5 +1,5 @@
 {
-  "updated": "2026-06-29T17:23:13.258Z",
+  "updated": "2026-06-29T19:20:09.253Z",
   "season": 26618,
   "source": "SportMonks",
   "matches": [
@@ -9,6 +9,13 @@
       "w": "CAN",
       "ga": 1,
       "gb": 0
+    },
+    {
+      "a": "BRA",
+      "b": "JPN",
+      "w": "BRA",
+      "ga": 2,
+      "gb": 1
     }
   ]
 }
