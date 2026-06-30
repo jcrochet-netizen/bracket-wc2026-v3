@@ -1,5 +1,5 @@
 {
-  "updated": "2026-06-30T01:36:04.783Z",
+  "updated": "2026-06-30T05:55:01.719Z",
   "season": 26618,
   "source": "SportMonks",
   "matches": [
@@ -21,6 +21,13 @@
       "a": "PAR",
       "b": "GER",
       "w": "PAR",
+      "ga": 1,
+      "gb": 1
+    },
+    {
+      "a": "MAR",
+      "b": "NED",
+      "w": "MAR",
       "ga": 1,
       "gb": 1
     }
