@@ -1,5 +1,5 @@
 {
-  "updated": "2026-07-01T00:19:58.266Z",
+  "updated": "2026-07-01T05:00:49.750Z",
   "season": 26618,
   "source": "SportMonks",
   "matches": [
@@ -43,6 +43,13 @@
       "b": "PLB",
       "w": "FRA",
       "ga": 3,
+      "gb": 0
+    },
+    {
+      "a": "MEX",
+      "b": "ECU",
+      "w": "MEX",
+      "ga": 2,
       "gb": 0
     }
   ]
