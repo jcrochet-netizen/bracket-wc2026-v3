@@ -1,5 +1,5 @@
 {
-  "updated": "2026-07-03T23:42:10.786Z",
+  "updated": "2026-07-04T01:16:10.369Z",
   "season": 26618,
   "source": "SportMonks",
   "matches": [
@@ -100,6 +100,13 @@
       "w": "EGY",
       "ga": 1,
       "gb": 1
+    },
+    {
+      "a": "ARG",
+      "b": "CPV",
+      "w": "ARG",
+      "ga": 3,
+      "gb": 2
     }
   ]
 }
