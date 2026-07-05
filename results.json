@@ -1,5 +1,5 @@
 {
-  "updated": "2026-07-05T21:18:18.779Z",
+  "updated": "2026-07-05T22:28:44.369Z",
   "season": 26618,
   "source": "SportMonks",
   "matches": [
@@ -128,6 +128,13 @@
       "w": "FRA",
       "ga": 1,
       "gb": 0
+    },
+    {
+      "a": "BRA",
+      "b": "NOR",
+      "w": "NOR",
+      "ga": 1,
+      "gb": 2
     }
   ]
 }
