@@ -1,5 +1,5 @@
 {
-  "updated": "2026-07-12T01:05:05.905Z",
+  "updated": "2026-07-12T04:36:59.472Z",
   "season": 26618,
   "source": "SportMonks",
   "matches": [
@@ -191,6 +191,13 @@
       "w": "ENG",
       "ga": 1,
       "gb": 2
+    },
+    {
+      "a": "ARG",
+      "b": "SUI",
+      "w": "ARG",
+      "ga": 3,
+      "gb": 1
     }
   ]
 }
