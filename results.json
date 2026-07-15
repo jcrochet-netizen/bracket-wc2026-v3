@@ -1,5 +1,5 @@
 {
-  "updated": "2026-07-15T20:40:35.658Z",
+  "updated": "2026-07-15T21:37:36.271Z",
   "season": 26618,
   "source": "SportMonks",
   "matches": [
@@ -204,6 +204,13 @@
       "b": "ESP",
       "w": "ESP",
       "ga": 0,
+      "gb": 2
+    },
+    {
+      "a": "ENG",
+      "b": "ARG",
+      "w": "ARG",
+      "ga": 1,
       "gb": 2
     }
   ]
